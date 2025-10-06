@@ -15,9 +15,13 @@ app.use(express.static(publicDirectoryPath));
 let message = "Welcome Socket";
 
 io.on("connection", (socket) => {
-    console.log("Nwe WebSocket Connection");
+    console.log("New WebSocket Connection");
     socket.emit("userConnect", message);
-})
+    socket.on("SendMessage", (message) => {
+        io.emit("userConnect", message)
+        console.log(message);
+    });
+});
 
 server.listen(port, () => {
     console.log(`Server is up on port ${port}`);
