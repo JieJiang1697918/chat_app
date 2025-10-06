@@ -2,7 +2,7 @@ const path = require("path");
 const http = require("http");
 const express = require("express");
 const socketio = require("socket.io");
-const {generateMessage} = require("./record/message")
+const { generateMessage } = require("./record/message");
 
 const app = express();
 const server = http.createServer(app);
@@ -13,17 +13,18 @@ const publicDirectoryPath = path.join(__dirname, "../public");
 
 app.use(express.static(publicDirectoryPath));
 
-let message = "Welcome the Chat Room";
-
 io.on("connection", (socket) => {
-    console.log("New WebSocket Connection");
-    socket.emit("userConnect", generateMessage(message));
-    socket.broadcast.emit("userConnect", generateMessage("A new user has joined"));
-    socket.on("sendMessage", (message) => {
-        io.emit("userConnect", generateMessage(message));
+    console.log("New WebSocket connection");
+
+    socket.emit("message", generateMessage("Welcome to the Chat Room!"));
+    socket.broadcast.emit("message", generateMessage("A new user has joined."));
+
+    socket.on("sendMessage", (msg, callback) => {
+        io.emit("message", generateMessage(msg));
     });
+
     socket.on("disconnect", () => {
-        io.emit("userConnect", generateMessage("A user has left"));
+        io.emit("message", generateMessage("A user has left."));
     });
 });
 
