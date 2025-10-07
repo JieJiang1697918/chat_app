@@ -3,6 +3,11 @@ const http = require("http");
 const express = require("express");
 const socketio = require("socket.io");
 const { generateMessage } = require("./record/message");
+const { addUser,
+        removeUser,
+        getUser,
+        getUsersInRoom,
+ } = require("./record/user");
 
 const app = express();
 const server = http.createServer(app);
@@ -13,18 +18,75 @@ const publicDirectoryPath = path.join(__dirname, "../public");
 
 app.use(express.static(publicDirectoryPath));
 
+let message = "Welcome to the Chat Room";
+
 io.on("connection", (socket) => {
     console.log("New WebSocket connection");
 
-    socket.emit("message", generateMessage("Welcome to the Chat Room!"));
-    socket.broadcast.emit("message", generateMessage("A new user has joined."));
+    socket.on("join", ({ username, room }, callback) => {
+        const { error, user } = addUser({ id: socket.id, username, room });
+
+        if (error) {
+            return callback(error);
+        }
+
+        socket.join(user.room);
+
+        socket.emit(
+            "userConnect",
+            generateMessage("Admin", "Welcome to the Chat Room")
+        );
+
+        socket.broadcast
+            .to(user.room)
+            .emit(
+                "userConnect",
+                generateMessage("Admin", `${user.username} has joined`)
+            );
+
+        io.to(user.room).emit("roomData", {
+            room: user.room,
+            users: getUsersInRoom(user.room),
+        });
+
+        callback();
+});
+
 
     socket.on("sendMessage", (msg, callback) => {
-        io.emit("message", generateMessage(msg));
+        const getUserRoom = getUser (socket.id).room;
+
+        io.to(getUserRoom).emit(
+            "UserConnect",
+            generateMessage(getUser(socket.id).username, message)
+        );
     });
 
+    socket.on("fileUpload", ({fileName, fileData}, callback) => {
+        const getUserRoom = getUser (socket.id).room;
+
+        io.to(getUserRoom).emit(
+            "fileReceived",
+            generateMessage(getUser(socket.id).username, fileName, fileData)
+        );
+    });
+
+
+
     socket.on("disconnect", () => {
-        io.emit("message", generateMessage("A user has left."));
+        const user = removeUser(stocket.id);
+
+        if (user){
+            io.to(user.room).emit(
+                "userConnect",
+                generateMessage("Admin", `${user.username} has joined`)
+            )
+        };
+
+            io.to(user.room).emit("roomData",{
+                room: user.room,
+                user: getUsersInRoom(user,room),
+            });        
     });
 });
 

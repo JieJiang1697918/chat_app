@@ -25,3 +25,10 @@ document.querySelector("#message-form").addEventListener("submit", (e) => {
         console.log("Message Delivered");
     });
 });
+
+socket.on("roomData", ({ room, users }) => {
+    const sidebarTemplate = document.querySelector("#sidebar-template").innerHTML;
+    const html = Mustache.render(sidebarTemplate, { room, users });
+    document.querySelector("#sidebar").innerHTML = html;
+});
+
