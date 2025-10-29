@@ -8,6 +8,8 @@ const { addUser,
         getUser,
         getUsersInRoom,
  } = require("./record/user");
+const bodyParser = require('body-parser');
+const bcrypt = require('bcrypt');
 
 const app = express();
 const server = http.createServer(app);
@@ -17,6 +19,21 @@ const port = 8080;
 const publicDirectoryPath = path.join(__dirname, "../public");
 
 app.use(express.static(publicDirectoryPath));
+
+app.post('/login', (req, res) => {
+    const { username, room, password } = req.body;
+
+    if (!rooms[room]) {
+        return res.status(400).send('Room does not exist.');
+    }
+
+    const validPassword = bcrypt.compareSync(password, rooms[room].passwordHash);
+    if (!validPassword) {
+        return res.status(401).send('Invalid password.');
+    }
+
+    res.redirect(`/chat.html?username=${encodeURIComponent(username)}&room=${encodeURIComponent(room)}`);
+});
 
 let message = "Welcome to the Chat Room";
 
